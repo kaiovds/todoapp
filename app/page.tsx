@@ -17,40 +17,73 @@ export default function Home() {
 
   const [filter, setFilter] = useState<Filter>("all");
 
+  // useEffect(() => {
+  //   const savedTasks = localStorage.getItem("tasks");
+  //   if (savedTasks) {
+  //     setTasks(JSON.parse(savedTasks));
+  //   }
+  // }, []);
+
+  // useEffect(() => {
+  //   localStorage.setItem("tasks", JSON.stringify(tasks));
+  // }, [tasks]);
+
   useEffect(() => {
-    const savedTasks = localStorage.getItem("tasks");
-    if (savedTasks) {
-      setTasks(JSON.parse(savedTasks));
-    }
+    fetch("/api/tasks")
+      .then((res) => res.json())
+      .then((data) => setTasks(data));
   }, []);
 
-  useEffect(() => {
-    localStorage.setItem("tasks", JSON.stringify(tasks));
-  }, [tasks]);
-
-  function addTask() {
+  async function addTask() {
     if (!input.trim()) return;
 
-    const newTask: Task = {
-      id: Date.now(),
-      text: input,
-      done: false,
-    };
+    const res = await fetch("/api/tasks", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: input }),
+    });
 
+    // const newTask: Task = {
+    //   id: Date.now(),
+    //   text: input,
+    //   done: false,
+    // };
+
+    const newTask = await res.json();
     setTasks((prev) => [...prev, newTask]);
     setInput("");
   }
 
-  function toggleTask(id: number) {
-    setTasks((prev) => prev.map((task) => (task.id === id ? { ...task, done: !task.done } : task)));
+  async function toggleTask(id: number) {
+    const task = tasks.find((t) => t.id === id);
+    if (!task) return;
+
+    const res = await fetch(`/api/tasks/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ done: !task.done }),
+    });
+
+    const updated = await res.json();
+    setTasks((prev) => prev.map((task) => (task.id === id ? updated : task)));
   }
 
-  function deleteTask(id: number) {
+  async function deleteTask(id: number) {
+    await fetch(`/api/tasks/${id}`, {
+      method: "DELETE",
+    });
     setTasks((prev) => prev.filter((task) => task.id !== id));
   }
 
-  function updateTask(id: number, newText: string) {
-    setTasks((prev) => prev.map((task) => (task.id === id ? { ...task, text: newText } : task)));
+  async function updateTask(id: number, newText: string) {
+    const res = await fetch(`/api/tasks/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: newText }),
+    });
+
+    const updated = await res.json();
+    setTasks((prev) => prev.map((task) => (task.id === id ? updated : task)));
   }
 
   const filteredTasks = tasks.filter((task) => {
