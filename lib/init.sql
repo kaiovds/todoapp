@@ -1,0 +1,6 @@
+CREATE TABLE IF NOT EXISTS Tasks (
+    id SERIAL PRIMARY KEY,
+    text VARCHAR(255) NOT NULL,
+    done BOOLEAN DEFAULT false,
+    created_at TIMESTAMP DEFAULT NOW()
+);
