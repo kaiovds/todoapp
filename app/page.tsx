@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import TaskItem from "@/components/TaskItem";
 
 type Task = {
@@ -14,24 +15,17 @@ type Filter = "all" | "active" | "completed";
 export default function Home() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [input, setInput] = useState("");
-
   const [filter, setFilter] = useState<Filter>("all");
-
-  // useEffect(() => {
-  //   const savedTasks = localStorage.getItem("tasks");
-  //   if (savedTasks) {
-  //     setTasks(JSON.parse(savedTasks));
-  //   }
-  // }, []);
-
-  // useEffect(() => {
-  //   localStorage.setItem("tasks", JSON.stringify(tasks));
-  // }, [tasks]);
+  const router = useRouter();
 
   useEffect(() => {
-    fetch("/api/tasks")
-      .then((res) => res.json())
-      .then((data) => setTasks(data));
+    fetch("/api/tasks").then((res) => {
+      if (res.status === 401) {
+        router.push("/login");
+        return;
+      }
+      res.json().then((data) => setTasks(data));
+    });
   }, []);
 
   async function addTask() {
@@ -42,13 +36,6 @@ export default function Home() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text: input }),
     });
-
-    // const newTask: Task = {
-    //   id: Date.now(),
-    //   text: input,
-    //   done: false,
-    // };
-
     const newTask = await res.json();
     setTasks((prev) => [...prev, newTask]);
     setInput("");
@@ -63,15 +50,12 @@ export default function Home() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ done: !task.done }),
     });
-
     const updated = await res.json();
     setTasks((prev) => prev.map((task) => (task.id === id ? updated : task)));
   }
 
   async function deleteTask(id: number) {
-    await fetch(`/api/tasks/${id}`, {
-      method: "DELETE",
-    });
+    await fetch(`/api/tasks/${id}`, { method: "DELETE" });
     setTasks((prev) => prev.filter((task) => task.id !== id));
   }
 
@@ -81,9 +65,13 @@ export default function Home() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text: newText }),
     });
-
     const updated = await res.json();
     setTasks((prev) => prev.map((task) => (task.id === id ? updated : task)));
+  }
+
+  async function logout() {
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.push("/login");
   }
 
   const filteredTasks = tasks.filter((task) => {
@@ -98,7 +86,12 @@ export default function Home() {
 
   return (
     <main className="p-6 max-w-xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">Task Manager</h1>
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-bold">Task Manager</h1>
+        <button onClick={logout} className="text-sm text-red-500 underline">
+          Sair
+        </button>
+      </div>
 
       <div className="flex gap-2 mb-4">
         <input
