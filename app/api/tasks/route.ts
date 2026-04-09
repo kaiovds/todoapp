@@ -8,7 +8,31 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const result = await pool.query("SELECT * FROM tasks WHERE user_id = $1 ORDER BY created_at ASC", [userId]);
+  const result = await pool.query(
+    `SELECT
+      t.*,
+      COALESCE(
+          json_agg(
+              json_build_object('id', tg.id, 'name', tg.name, 'color', tg.color)
+          ) FILTER (
+              WHERE
+                  tg.id IS NOT NULL
+          ),
+          '[]'
+      ) AS tags
+    FROM
+      tasks t
+      LEFT JOIN task_tags tt ON t.id = tt.task_id
+      LEFT JOIN tags tg ON tt.tag_id = tg.id
+    WHERE
+      t.user_id = $1
+    GROUP BY
+      t.id
+    ORDER BY
+      t.position ASC,
+      t.created_at ASC`,
+    [userId],
+  );
   return NextResponse.json(result.rows);
 }
 
@@ -19,6 +43,14 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json();
-  const result = await pool.query("INSERT INTO tasks (text, user_id) VALUES ($1, $2) RETURNING *", [body.text, userId]);
+
+  const countResult = await pool.query("SELECT COUNT(*) FROM tasks WHERE user_id = $1", [userId]);
+  const position = parseInt(countResult.rows[0].count);
+
+  const result = await pool.query(`INSERT INTO tasks (text, user_id, position) VALUES ($1, $2, $3) RETURNING *, '[]'::json tags`, [
+    body.text,
+    userId,
+    position,
+  ]);
   return NextResponse.json(result.rows[0], { status: 201 });
 }
