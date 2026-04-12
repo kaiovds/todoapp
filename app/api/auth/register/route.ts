@@ -26,7 +26,7 @@ export async function POST(request: Request) {
   ]);
 
   const user = result.rows[0];
-  const token = createToken(user.id);
+  const token = createToken(user.id, "user");
 
   const response = NextResponse.json({ user });
 

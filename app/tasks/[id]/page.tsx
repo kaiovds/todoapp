@@ -109,7 +109,7 @@ export default function TaskPage() {
 
         {/* Card */}
         <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 shadow-sm space-y-6">
-          {/* Concluída */}
+          {/* Completed */}
           <label className="flex items-center gap-3 cursor-pointer">
             <input type="checkbox" checked={task.done} onChange={handleToggle} className="h-4 w-4 rounded accent-indigo-500" />
             <span className={`text-sm font-medium ${task.done ? "line-through text-gray-400" : "text-gray-700 dark:text-gray-200"}`}>
@@ -117,7 +117,7 @@ export default function TaskPage() {
             </span>
           </label>
 
-          {/* Título */}
+          {/* Title */}
           <div>
             <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Title</label>
             {isEditing ? (
@@ -131,7 +131,7 @@ export default function TaskPage() {
             )}
           </div>
 
-          {/* Descrição */}
+          {/* Description */}
           <div>
             <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Description</label>
             {isEditing ? (
@@ -147,7 +147,7 @@ export default function TaskPage() {
             )}
           </div>
 
-          {/* Data */}
+          {/* Date */}
           <div>
             <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">
               <CalendarDays size={14} className="inline mr-1" />
@@ -193,7 +193,7 @@ export default function TaskPage() {
             </div>
           )}
 
-          {/* Salvar or Edit*/}
+          {/* Save or Edit*/}
           {isEditing ? (
             <button
               onClick={() => {
