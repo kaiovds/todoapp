@@ -2,6 +2,35 @@ import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 import { getUser } from "@/lib/get-user";
 
+export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const userId = await getUser();
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { id } = await params;
+
+  const result = await pool.query(
+    `SELECT t.*,
+      COALESCE(
+        json_agg(json_build_object('id', tg.id, 'name', tg.name, 'color', tg.color))
+        FILTER (WHERE tg.id IS NOT NULL), '[]'
+      ) AS tags
+    FROM tasks t
+      LEFT JOIN task_tags tt ON tt.task_id = t.id
+      LEFT JOIN tags tg ON tt.tag_id = tg.id
+    WHERE t.id = $1 AND t.user_id = $2
+    GROUP BY t.id`,
+    [id, userId],
+  );
+
+  if (result.rows.length === 0) {
+    return NextResponse.json({ error: "Task not found" }, { status: 404 });
+  }
+
+  return NextResponse.json(result.rows[0]);
+}
+
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const userId = await getUser();
   if (!userId) {
@@ -49,7 +78,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   }
 
   const fields: string[] = [];
-  const values: (string | boolean | number)[] = [];
+  const values: (string | boolean | number | null)[] = [];
   let count = 1;
 
   if (body.text !== undefined) {
@@ -61,6 +90,18 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (body.done !== undefined) {
     fields.push(`done = $${count}`);
     values.push(body.done);
+    count++;
+  }
+
+  if (body.description !== undefined) {
+    fields.push(`description = $${count}`);
+    values.push(body.description);
+    count++;
+  }
+
+  if (body.due_date !== undefined) {
+    fields.push(`due_date = $${count}`);
+    values.push(body.due_date);
     count++;
   }
 

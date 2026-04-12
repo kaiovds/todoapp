@@ -36,13 +36,13 @@ export default function Register() {
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Create your account</h1>
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">Start managing your tasks.</p>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="flex gap-3">
+          <div className="flex gap-2">
             <input
               type="text"
               placeholder="First Name"
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
-              className="flex-1 border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+              className="flex-1 min-w-0 border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
               required
             />
             <input
@@ -50,7 +50,7 @@ export default function Register() {
               placeholder="Last Name"
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
-              className="flex-1 border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+              className="flex-1 min-w-0 border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
               required
             />
           </div>

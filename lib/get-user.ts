@@ -14,3 +14,17 @@ export async function getUser() {
     return null;
   }
 }
+
+export async function getRole() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("token")?.value;
+
+  if (!token) return null;
+
+  try {
+    const { role } = verifyToken(token);
+    return role;
+  } catch {
+    return null;
+  }
+}

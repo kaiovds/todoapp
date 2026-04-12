@@ -11,7 +11,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Email and Password are mandatory" }, { status: 400 });
   }
 
-  const result = await pool.query("SELECT id, email, password FROM users WHERE email = $1", [email]);
+  const result = await pool.query("SELECT id, email, password, role FROM users WHERE email = $1", [email]);
 
   if (result.rows.length === 0) {
     return NextResponse.json({ error: "Wrong credentials" }, { status: 401 });
@@ -24,9 +24,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Wrong credentials" }, { status: 401 });
   }
 
-  const token = createToken(user.id);
+  const token = createToken(user.id, user.role);
 
-  const response = NextResponse.json({ user: { id: user.id, email: user.email } });
+  const response = NextResponse.json({ user: { id: user.id, email: user.email, role: user.role } });
 
   response.cookies.set("token", token, {
     httpOnly: true,

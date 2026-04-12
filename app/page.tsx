@@ -7,7 +7,7 @@ import TaskList from "@/components/TaskList";
 import ThemeToggle from "@/components/ThemeToggle";
 
 type Tag = { id: number; name: string; color: string };
-type Task = { id: number; text: string; done: boolean; tags: Tag[] };
+type Task = { id: number; text: string; done: boolean; tags: Tag[]; description?: string; due_date?: string };
 type Filter = "all" | "active" | "completed";
 
 const TAG_COLORS = ["#6366f1", "#ec4899", "#f59e0b", "#10b981", "#3b82f6", "#ef4444", "#8b5cf6", "#14b8a6"];
@@ -16,14 +16,23 @@ export default function Home() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
   const [input, setInput] = useState("");
+  const [inputDesc, setInputDesc] = useState("");
+  const [inputDueDate, setInputDueDate] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
   const [filterTag, setFilterTag] = useState<number | null>(null);
   const [newTagName, setNewTagName] = useState("");
   const [newTagColor, setNewTagColor] = useState(TAG_COLORS[0]);
   const [showTagForm, setShowTagForm] = useState(false);
+  const [isAdding, setIsAdding] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
+    fetch("/api/auth/me")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.role === "admin") setIsAdmin(true);
+      });
     fetch("/api/tasks").then((res) => {
       if (res.status === 401) {
         router.push("/login");
@@ -41,11 +50,13 @@ export default function Home() {
     const res = await fetch("/api/tasks", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: input }),
+      body: JSON.stringify({ text: input, description: inputDesc || null, due_date: inputDueDate || null }),
     });
     const newTask = await res.json();
     setTasks((prev) => [...prev, newTask]);
     setInput("");
+    setInputDesc("");
+    setInputDueDate("");
   }
 
   async function toggleTask(id: number) {
@@ -64,12 +75,12 @@ export default function Home() {
     await fetch(`/api/tasks/${id}`, { method: "DELETE" });
     setTasks((prev) => prev.filter((t) => t.id !== id));
   }
-
-  async function updateTask(id: number, newText: string) {
+  /*
+  async function updateTask(id: number, newText: string, newDescription?: string, newDueDate?: string) {
     const res = await fetch(`/api/tasks/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: newText }),
+      body: JSON.stringify({ text: newText, description: newDescription, due_date: newDueDate }),
     });
     const updated = await res.json();
     setTasks((prev) => prev.map((t) => (t.id === id ? updated : t)));
@@ -84,7 +95,7 @@ export default function Home() {
     const updated = await res.json();
     setTasks((prev) => prev.map((t) => (t.id === id ? updated : t)));
   }
-
+*/
   async function reorderTasks(activeId: number, overId: number) {
     const oldIndex = tasks.findIndex((t) => t.id === activeId);
     const newIndex = tasks.findIndex((t) => t.id === overId);
@@ -145,29 +156,58 @@ export default function Home() {
           </div>
           <div className="flex items-center gap-3">
             <ThemeToggle />
+            {isAdmin && (
+              <button onClick={() => router.push("/admin")} className="text-sm text-indigo-400 hover:text-indigo-600 transition-colors">
+                Admin
+              </button>
+            )}
             <button onClick={logout} className="text-sm text-red-400 hover:text-red-600 dark:hover:text-red-300 transition-colors">
               Log out
             </button>
           </div>
         </div>
 
-        <div className="flex gap-2 mb-6">
-          <input
-            className="flex-1 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 placeholder:text-gray-400"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="New task..."
-            onKeyDown={(e) => {
-              if (e.key === "Enter") addTask();
-            }}
+        <div className="flex flex-col gap-2 mb-6">
+          <div className="flex gap-2">
+            <input
+              className="flex-1 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 placeholder:text-gray-400"
+              value={input}
+              onChange={(e) => {
+                setInput(e.target.value);
+              }}
+              placeholder="Task title..."
+              onFocus={(e) => setIsAdding(true)}
+              onBlur={(e) => {
+                if (!input.trim()) setIsAdding(false);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") addTask();
+              }}
+            />
+            <button
+              onClick={(e) => {
+                addTask();
+                setIsAdding(false);
+              }}
+              disabled={!input.trim()}
+              className="bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 text-white px-5 py-3 rounded-xl text-sm font-medium transition-colors"
+            >
+              Add
+            </button>
+          </div>
+          <textarea
+            className={`border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 placeholder:text-gray-400 resize-none display: ${isAdding ? "block" : "hidden"}`}
+            value={inputDesc}
+            onChange={(e) => setInputDesc(e.target.value)}
+            placeholder="Description (optional)..."
+            rows={2}
           />
-          <button
-            onClick={addTask}
-            disabled={!input.trim()}
-            className="bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 text-white px-5 py-3 rounded-xl text-sm font-medium transition-colors"
-          >
-            Add
-          </button>
+          <input
+            type="date"
+            className={`border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 display: ${isAdding ? "block" : "hidden"}`}
+            value={inputDueDate}
+            onChange={(e) => setInputDueDate(e.target.value)}
+          />
         </div>
 
         <div className="flex flex-wrap justify-between items-center gap-3 mb-6">
@@ -273,11 +313,11 @@ export default function Home() {
 
         <TaskList
           tasks={filteredTasks}
-          allTags={tags}
+          //allTags={tags}
           onToggle={toggleTask}
           onDelete={deleteTask}
-          onUpdate={updateTask}
-          onUpdateTags={updateTaskTags}
+          //onUpdate={updateTask}
+          //onUpdateTags={updateTaskTags}
           onReorder={reorderTasks}
         />
 

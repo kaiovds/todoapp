@@ -47,10 +47,9 @@ export async function POST(request: Request) {
   const countResult = await pool.query("SELECT COUNT(*) FROM tasks WHERE user_id = $1", [userId]);
   const position = parseInt(countResult.rows[0].count);
 
-  const result = await pool.query(`INSERT INTO tasks (text, user_id, position) VALUES ($1, $2, $3) RETURNING *, '[]'::json tags`, [
-    body.text,
-    userId,
-    position,
-  ]);
+  const result = await pool.query(
+    `INSERT INTO tasks (text, description, due_date, user_id, position) VALUES ($1, $2, $3, $4, $5) RETURNING *, '[]'::json tags`,
+    [body.text, body.description ?? null, body.due_date ?? null, userId, position],
+  );
   return NextResponse.json(result.rows[0], { status: 201 });
 }
